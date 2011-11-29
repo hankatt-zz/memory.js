@@ -1,0 +1,52 @@
+..this is memory.js, my side project. It's under development and serves it's purpose which is being a game of memory with the intended functionality of my cause. It was originally not created for being jQuery memory plugin but for my own use. Decided to turn it into a plugin when I had most of the functionality ready.
+
+NOTE #1: CURRENTLY ONLY SUPPORTING 3 ROWS AND 4 COLUMNS.
+NOTE #2: CSS STYLING IS NEEDED FOR THE MEMORY AND ITS ELEMENTS
+
+CAUTION: NO GUARANTEES ON RELIABILITY.
+======================================================
+
+What's needed for the script to do it's job is either of these:
+
+======================================================
+
+1. An existing div containing divs and your img elements as follows:
+
+<div id="memory">
+		<div><img src="yourimage.jpg" /></div>
+		<div><img src="yourimage2.jpg" /></div>
+		<div><img src="yourimage3.jpg" /></div>
+</div>
+
+..or more likely something generated with your server-side language of choice:
+
+<div id="memory">
+	<% @photos.each do |image| %>
+		<div>
+			<%= image_tag image.path %>
+		</div>
+	<% end %>
+</div>
+
+Example on what would work using ruby.
+
+To initiate memory.js this is enough:
+
+	$("#memory").memory({ 'existingImages' : true });
+
+Given that the div containing the divs with images has id="memory".
+
+======================================================
+	
+2. An existing div containing no img elements
+
+<div id="memory"></div>
+
+To initiate memory.js in this case images has to be passed along as an array.
+
+images = ["monkey.jpg", "cat.jpg", "dog.jpg", "birds.jpg", "fish.jpg", "poo.jpg"];
+$("#memory").memory({ 'images' : images });
+
+This generates all the div's and img elements needed inside the #memory div.
+
+======================================================
