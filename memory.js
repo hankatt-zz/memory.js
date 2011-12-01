@@ -82,7 +82,7 @@
 				if(first_open === "")
 					first_open = $(card); //Saves the first card that's opened
 				else
-					(first_open.attr('src') === card.attr('src')) ? methods.save(first_open, card) : setTimeout(methods.reset(first_open, card), 750);
+					(first_open.attr('src') === card.attr('src')) ? methods.save(first_open, card) : setTimeout(function() { methods.reset(first_open, card); }, 350);
 			});
     	},
     	
