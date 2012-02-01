@@ -12,49 +12,124 @@
       'solution':	0,
     }, options);
     
-    //Variables
-  	settings.size = settings.rows*settings.cols;
-  	var first_open = "";
+  	//Calculate size of the game field
+  	settings.size = settings.solution = settings.rows*settings.cols;
+  	
+  	/* #################################
+  	 * DEFINITION OF A MEMORY CARD
+  	 *
+  	 * Methods: save*, reset and compareTo
+  	 * *save includes checking for memory completion
+  	 * ################################# */
+  	card = {
+  		compareTo : function(card) {
+  			return this.image.attr('src') === card.image.attr('src');
+  		},
+  		
+  		reset : function() {
+  			image = this.image;  			
+  			this.image = "undefined";
+  			image.fadeToggle();
+  		},
+  		
+  		save : function() {
+  			this.image.parent().css('opacity', '0.4');
+  			this.image = "undefined";
+  			//Check if this solution ends the game
+			if(++settings.solved === settings.solution) {
+				$("#authors").fadeToggle('slow');
+				$("#success-wrapper").html("<h2>Congratulations, well done!</h2><p>Don't miss my portfolio at <a href='http://www.henrikwiberg.com' target='_blank'>henrikwiberg.com</a></p>").fadeToggle('slow');
+			}
+  		},
+  		
+  		image : "undefined"
+  	};
+  	
+  	//Create two cards based on card object we'll use when playing
+  	cards = [];
+    cards.push(jQuery.extend(true, {}, card));
+    cards.push(jQuery.extend(true, {}, card));
     
-    //Methods
+    /* #################################
+  	 * DEFINITION OF GAME METHODS
+  	 *
+  	 * Methods: init, shuffle, scale, getPath
+  	 * 
+  	 * init GENERATES THE GAME AND MAKES IT WORK,
+  	 * THE GAME FIELD IS CREATED, IMAGES ARE SHUFFLED,
+  	 * GAME FIELD IS SCALED, MAKE CARDS CLICKABLE.
+  	 *
+  	 * shuffle TAKES AN ARRAY AND RETURNS A
+  	 * SHUFFLED COPY.
+  	 *
+  	 * scale TAKES A DIV AND FITS IT TO THE BROWSER WINDOW
+  	 *
+  	 * getPath RETURNS THE PATH TO A IMAGE WHETHER IT'S
+  	 * A jQuery object OR AN EXISTING image ATTACHED
+  	 * THROUGH THE PARAMS.
+  	 *
+  	 * ################################# */
     methods = {
     	init : function(memory) {
-    		memory.append('<span id="success"><h2>Loading images..</h2></span>'); //Show that images are loading
+    		//Show that images are loading
+    		$("#play-link").html('<img alt="Play" id="play" src="/assets/loading.PNG" />');
     		
     		//Generate the divs for the memory blocks
     		number = (settings.existingImages) ? settings.size/2 : settings.size;
 			for(var i = 0; i < number; i++)
     			memory.append('<div></div>');
 			
+			//When everything is loaded, set up the memory game
 			$(window).load(function() {
 				//If images are already in the memory container
-				if(settings.existingImages)
+				if(settings.existingImages) {
 					settings.images = $.makeArray(memory.children('div').children('img'));
 				
-				//Set solution length now that we have images defined
-				settings.solution = settings.images.length;
-				
-				//Shuffle images
-    			images = methods.shuffle(settings.images.concat(settings.images));
+				//Duplicate settings.images and shuffle cards
+    			settings.images = methods.shuffle(settings.images.concat(settings.images));
     			
 				//Add shuffled images to cards
 				if(settings.existingImages) {
 					memory.children('div').each(function(index) {
-						$(this).html('<img src="' + methods.getPath(images[index]) +'" class="cardImage"/>');
+						$(this).html('<img src="' + methods.getPath(settings.images[index]) +'" class="cardImage"/>');
 					});
 				}
 				
 				//Scale the gaming cards to fit fullscreen
 				methods.scale(memory);
 		
-				//Make cards clickable
+				//Make cards clickable and define what happens when clicked
 				memory.children('div').click(function() {
+					//Sets the clicked card to a jQuery image object
 					card = $(this).children('img');
-					if(card.is(":hidden")) //Only make invisible cards clickable
-						methods.compare(card); //Compares the selected card
+					
+					//Only make hidden cards clickable
+					if(card.is(":hidden") && cards[1].image === "undefined") {
+						card.fadeToggle('fast', function() {
+							//Set the first card to the clicked card
+							if(cards[0].image === "undefined")
+								cards[0].image = card;
+							else {
+								//Set the second card to the clicked card
+								cards[1].image = card;
+								
+								//Now that two cards are open, compare them
+								if(cards[1].compareTo(cards[0])) {
+									//The cards were equal so save both of them
+									cards[0].save();
+									cards[1].save();
+								} else {
+									//The cards were not equal so reset them
+									cards[0].reset();
+									cards[1].reset();
+								}
+							}	
+						});
+					}
 				});
 				
-				$("#success").fadeToggle();
+				//Image to show when the game has loaded
+				$("#play-link").html('<img alt="Play" id="play" src="/assets/play.png" />');
 			});
     	},
     	
@@ -77,25 +152,22 @@
 			return copy;
     	},
     	
-    	compare : function(card) {
-    		card.fadeToggle('fast', function() {
-				if(first_open === "")
-					first_open = $(card); //Saves the first card that's opened
-				else
-					(first_open.attr('src') === card.attr('src')) ? methods.save(first_open, card) : setTimeout(function() { methods.reset(first_open, card); }, 350);
-			});
-    	},
-    	
     	scale : function(memory) {
     		viewportHeight = $(window).height();
-			size = viewportHeight / 3 | 0;
+    		availableWidth = $(window).width() - 160;
+    		
+    		//<number with decimals> | 0 cuts the decimals
+    		if(viewportHeight > availableWidth)
+    			size = availableWidth / 4 | 0;
+    		else
+				size = viewportHeight / 3 | 0;
 	
 			//Setting size of game field
 			memory.width(size*4);
 			memory.height(viewportHeight);
 	
 			//Adjust for borders
-			border = 1;
+			border = 0;
 
 			//Scales all the cards to the same size
 			memory.children('div').each(function() {
@@ -112,22 +184,7 @@
 			});
     	},
     	
-    	save : function(card1, card2) {
-    		card1.parent().css('opacity', '0.4');
-			card2.parent().css('opacity', '0.4');
-			first_open = "";
-	
-			//Check if this solution ends the game
-			if(++settings.solved === settings.solution)
-				$("#success").html('<h2>Congratulations, well done!</h2>').fadeToggle('slow');
-    	},
-    	
-    	reset : function(card1, card2) {
-    		card1.toggle();
-			card2.toggle();
-			first_open = "";
-    	},
-    	
+    	//Return the path for an image
     	getPath : function(image) {
     		return (settings.existingImages) ? $(image).attr('src') : image;
     	}
